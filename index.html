@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frostbite Hoops | Winter Trivia Basketball</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka (bold, playful classroom font) & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for crisp icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --ice-blue: #38bdf8;
+            --deep-winter: #0f172a;
+            --frost-bg: rgba(255, 255, 255, 0.85);
+            --team1-color: #0284c7;
+            --team2-color: #e11d48;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #0b192c 0%, #1e3a8a 45%, #38bdf8 85%, #e0f2fe 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        h1, h2, h3, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Background Snow Canvas */
+        #snow-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Frosted Glass Panel */
+        .frost-panel {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 3px solid rgba(255, 255, 255, 0.95);
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.25), inset 0 2px 6px rgba(255, 255, 255, 0.8);
+        }
+
+        .frost-dark {
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(186, 230, 253, 0.35);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Ice Tile Button Styling */
+        .ice-tile {
+            background: linear-gradient(145deg, #ffffff 0%, #e0f2fe 55%, #bae6fd 100%);
+            border: 4px solid #ffffff;
+            box-shadow: 0 8px 0 #7dd3fc, 0 14px 20px rgba(15, 23, 42, 0.25);
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ice-tile::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.8) 50%, transparent 60%);
+            transform: rotate(25deg);
+            transition: transform 0.5s ease;
+            pointer-events: none;
+        }
+
+        .ice-tile:hover:not(.cleared) {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 12px 0 #38bdf8, 0 20px 25px rgba(15, 23, 42, 0.3);
+            border-color: #fef08a;
+        }
+
+        .ice-tile:hover:not(.cleared)::before {
+            transform: translateX(40%) rotate(25deg);
+        }
+
+        .ice-tile:active:not(.cleared) {
+            transform: translateY(3px) scale(0.98);
+            box-shadow: 0 4px 0 #38bdf8, 0 6px 10px rgba(15, 23, 42, 0.2);
+        }
+
+        .ice-tile.cleared {
+            background: rgba(15, 23, 42, 0.35);
+            border: 2px dashed rgba(186, 230, 253, 0.4);
+            box-shadow: none;
+            cursor: default;
+            transform: scale(0.95);
+        }
+
+        /* 3D Arcade Buttons */
+        .btn-arcade {
+            transition: all 0.15s ease;
+            position: relative;
+        }
+        .btn-arcade:active {
+            transform: translateY(4px);
+            box-shadow: none !important;
+        }
+
+        /* Active Team Glow */
+        @keyframes pulseGlowBlue {
+            0%, 100% { box-shadow: 0 0 0 4px #38bdf8, 0 0 25px rgba(56, 189, 248, 0.8); }
+            50% { box-shadow: 0 0 0 7px #bae6fd, 0 0 40px rgba(56, 189, 248, 1); }
+        }
+
+        @keyframes pulseGlowRed {
+            0%, 100% { box-shadow: 0 0 0 4px #fb7185, 0 0 25px rgba(244, 63, 94, 0.8); }
+            50% { box-shadow: 0 0 0 7px #fecdd3, 0 0 40px rgba(244, 63, 94, 1); }
+        }
+
+        .active-team-1 {
+            animation: pulseGlowBlue 2s infinite;
+            transform: scale(1.04);
+        }
+
+        .active-team-2 {
+            animation: pulseGlowRed 2s infinite;
+            transform: scale(1.04);
+        }
+
+        /* Option Buttons */
+        .mcq-option {
+            transition: all 0.15s ease;
+        }
+        .mcq-option:hover:not(:disabled) {
+            transform: translateX(6px);
+        }
+
+        /* Basketball Court Container */
+        #court-wrapper {
+            position: relative;
+            width: 100%;
+            height: 410px;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            box-shadow: inset 0 0 25px rgba(15, 23, 42, 0.4);
+            border: 4px solid #ffffff;
+            touch-action: none;
+        }
+
+        @media (min-width: 768px) {
+            #court-wrapper {
+                height: 460px;
+            }
+        }
+
+        #bball-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: pointer;
+        }
+
+        /* Custom Scrollbar for Question Editor */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(224, 242, 254, 0.5);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #38bdf8;
+            border-radius: 10px;
+        }
+
+        @keyframes floatBounce {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: floatBounce 2.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="text-slate-800 relative flex flex-col justify-between">
+
+    <!-- Falling Snow Particles Canvas -->
+    <canvas id="snow-canvas"></canvas>
+
+    <!-- Decorative Winter Ground & Pine Silhouette SVG -->
+    <div class="fixed bottom-0 left-0 w-full pointer-events-none z-0 opacity-90">
+        <svg viewBox="0 0 1440 160" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-24 md:h-36 preserve-3d" preserveAspectRatio="none">
+            <path d="M0 90C240 40 480 130 720 80C960 30 1200 110 1440 60V160H0V90Z" fill="#bae6fd" fill-opacity="0.6"/>
+            <path d="M0 110C320 150 640 50 960 100C1200 135 1350 90 1440 85V160H0V110Z" fill="#f0f9ff"/>
+        </svg>
+    </div>
+
+    <!-- Top Utility Bar -->
+    <header class="relative z-20 w-full max-w-7xl mx-auto px-4 pt-3 pb-1 flex justify-between items-center">
+        <div class="flex items-center gap-2.5 bg-white/90 backdrop-blur px-3.5 py-1.5 rounded-full shadow-md border-2 border-sky-200">
+            <span class="text-2xl">❄️</span>
+            <span class="font-display font-bold text-sky-900 text-lg tracking-wide">FROSTBITE HOOPS</span>
+            <span class="text-xl">🏀</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button id="btn-how-to" onclick="toggleHelpModal(true)" class="bg-white/90 hover:bg-white text-sky-900 font-bold px-3.5 py-2 rounded-full shadow-md border-2 border-sky-200 text-sm flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-circle-question text-sky-600"></i>
+                <span class="hidden sm:inline">How to Play</span>
+            </button>
+            <button id="btn-mute" onclick="toggleSound()" class="bg-white/90 hover:bg-white text-sky-900 font-bold w-10 h-10 rounded-full shadow-md border-2 border-sky-200 flex items-center justify-center transition" title="Toggle Sound">
+                <i id="mute-icon" class="fa-solid fa-volume-high text-sky-600"></i>
+            </button>
+            <button id="btn-reset-top" onclick="confirmReturnSetup()" class="hidden bg-rose-500 hover:bg-rose-600 text-white font-bold px-3.5 py-2 rounded-full shadow-md text-sm flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span class="hidden sm:inline">New Game</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="relative z-10 flex-grow flex items-center justify-center w-full max-w-7xl mx-auto px-4 py-3">
+
+        <!-- =========================================================
+             SCREEN 1: GAME SETUP & CUSTOM QUESTION BUILDER
+             ========================================================= -->
+        <section id="setup-screen" class="w-full max-w-4xl frost-panel rounded-3xl p-6 md:p-8 my-2">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center gap-3 bg-sky-100 border-2 border-sky-300 px-4 py-1 rounded-full text-sky-800 font-bold text-xs md:text-sm uppercase tracking-wider mb-2">
+                    <span>⛄ Classroom Trivia Showdown</span>
+                    <span>•</span>
+                    <span>2 Teams</span>
+                </div>
+                <h1 class="text-3xl md:text-5xl font-display font-bold text-slate-900 drop-shadow-sm">
+                    Winter Snow <span class="text-sky-600">Basketball</span>
+                </h1>
+                <p class="text-slate-600 mt-1 text-sm md:text-base font-medium">
+                    Answer questions right to earn a shot at the snow-capped hoop!
+                </p>
+            </div>
+
+            <!-- Team Names Setup -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Team 1 -->
+                <div class="bg-gradient-to-br from-sky-50 to-blue-100 p-4 rounded-2xl border-2 border-sky-300 shadow-sm">
+                    <label class="block text-xs font-extrabold uppercase tracking-wider text-sky-800 mb-1.5 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-sky-600 text-white inline-flex items-center justify-center text-xs">1</span>
+                        Team 1 Name (Ice Blue)
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xl">🧊</span>
+                        <input id="input-team1" type="text" value="Frost Giants" maxlength="20"
+                            class="w-full pl-11 pr-4 py-2.5 rounded-xl border-2 border-sky-300 focus:border-sky-600 focus:outline-none font-display font-bold text-lg text-slate-800 bg-white">
+                    </div>
+                </div>
+
+                <!-- Team 2 -->
+                <div class="bg-gradient-to-br from-rose-50 to-pink-100 p-4 rounded-2xl border-2 border-rose-300 shadow-sm">
+                    <label class="block text-xs font-extrabold uppercase tracking-wider text-rose-800 mb-1.5 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-rose-600 text-white inline-flex items-center justify-center text-xs">2</span>
+                        Team 2 Name (Crimson)
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xl">🔥</span>
+                        <input id="input-team2" type="text" value="Blizzard Ballers" maxlength="20"
+                            class="w-full pl-11 pr-4 py-2.5 rounded-xl border-2 border-rose-300 focus:border-rose-600 focus:outline-none font-display font-bold text-lg text-slate-800 bg-white">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Size & Trivia Pack Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Number of Tiles -->
+                <div class="bg-white/80 p-4 rounded-2xl border-2 border-slate-200">
+                    <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-2">
+                        <i class="fa-solid fa-table-cells text-sky-600 mr-1"></i> Grid Board Size
+                    </label>
+                    <div class="grid grid-cols-3 gap-2" id="tile-count-selector">
+                        <button type="button" onclick="selectTileCount(12)" data-count="12" class="tile-count-btn py-2.5 rounded-xl font-display font-bold text-base border-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-sky-50 transition">
+                            12 Tiles
+                        </button>
+                        <button type="button" onclick="selectTileCount(16)" data-count="16" class="tile-count-btn py-2.5 rounded-xl font-display font-bold text-base border-2 border-sky-600 bg-sky-600 text-white shadow-md transition">
+                            16 Tiles
+                        </button>
+                        <button type="button" onclick="selectTileCount(20)" data-count="20" class="tile-count-btn py-2.5 rounded-xl font-display font-bold text-base border-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-sky-50 transition">
+                            20 Tiles
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trivia Topic Pack -->
+                <div class="bg-white/80 p-4 rounded-2xl border-2 border-slate-200">
+                    <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-2">
+                        <i class="fa-solid fa-snowflake text-sky-600 mr-1"></i> Trivia Question Pack
+                    </label>
+                    <select id="select-pack" onchange="handlePackChange()" class="w-full py-2.5 px-3.5 rounded-xl border-2 border-slate-300 focus:border-sky-600 focus:outline-none font-bold text-slate-800 bg-white">
+                        <option value="winter_science">❄️ Winter, Snow & Cool Science (20 Qs)</option>
+                        <option value="general_knowledge">🌍 Classroom General Knowledge (20 Qs)</option>
+                        <option value="fun_riddles">🧩 Brain Teasers & Fun Riddles (20 Qs)</option>
+                        <option value="sports_hoops">🏀 Sports & Basketball Trivia (20 Qs)</option>
+                        <option value="custom">✏️ Custom Teacher Questions</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Collapsible Custom Question Editor -->
+            <div class="mb-6">
+                <button type="button" onclick="toggleCustomEditor()" class="w-full flex items-center justify-between px-4 py-3 bg-sky-100/90 hover:bg-sky-200/80 border-2 border-sky-300 rounded-2xl text-sky-900 font-bold text-sm transition">
+                    <span><i class="fa-solid fa-pen-to-square mr-2"></i>View or Edit Questions (<span id="active-q-count">20</span> loaded)</span>
+                    <i id="editor-chevron" class="fa-solid fa-chevron-down transition-transform"></i>
+                </button>
+
+                <div id="custom-editor-panel" class="hidden mt-3 bg-white/95 border-2 border-sky-200 rounded-2xl p-4">
+                    <!-- Quick Add Form -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 mb-4">
+                        <h4 class="font-display font-bold text-slate-800 text-sm mb-2">➕ Add New Multiple-Choice Question</h4>
+                        <input id="new-q-text" type="text" placeholder="Enter question text..." class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm mb-2 font-medium">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                            <input id="new-opt-0" type="text" placeholder="Option A" class="px-3 py-1.5 rounded-lg border border-slate-300 text-sm">
+                            <input id="new-opt-1" type="text" placeholder="Option B" class="px-3 py-1.5 rounded-lg border border-slate-300 text-sm">
+                            <input id="new-opt-2" type="text" placeholder="Option C" class="px-3 py-1.5 rounded-lg border border-slate-300 text-sm">
+                            <input id="new-opt-3" type="text" placeholder="Option D" class="px-3 py-1.5 rounded-lg border border-slate-300 text-sm">
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                <span>Correct Answer:</span>
+                                <select id="new-q-correct" class="px-2.5 py-1 rounded-lg border border-slate-300 bg-white">
+                                    <option value="0">Option A</option>
+                                    <option value="1">Option B</option>
+                                    <option value="2">Option C</option>
+                                    <option value="3">Option D</option>
+                                </select>
+                            </div>
+                            <button type="button" onclick="addCustomQuestion()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-1.5 rounded-lg text-sm shadow transition">
+                                + Add to Game
+                            </button>
+                        </div>
+                        <p id="custom-form-msg" class="text-xs font-bold mt-1.5 hidden"></p>
+                    </div>
+
+                    <!-- Question List -->
+                    <div id="question-list-container" class="max-h-56 overflow-y-auto space-y-2 pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Button -->
+            <div class="text-center">
+                <button onclick="startGame()" class="btn-arcade w-full md:w-auto px-12 py-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white font-display font-bold text-2xl rounded-2xl shadow-[0_6px_0_#9a3412] border-2 border-amber-200 tracking-wide flex items-center justify-center gap-3 mx-auto">
+                    <span>TIP OFF! START GAME</span>
+                    <span class="text-3xl">🏀</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- =========================================================
+             SCREEN 2: MAIN BAAMBOOZLE-STYLE BOARD
+             ========================================================= -->
+        <section id="board-screen" class="hidden w-full flex flex-col gap-4">
+
+            <!-- Scoreboard & Active Turn Banner -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                <!-- Team 1 Card -->
+                <div id="team1-card" class="frost-panel rounded-2xl p-3.5 md:p-4 flex items-center justify-between border-4 border-sky-400 transition-all duration-300">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white flex items-center justify-center text-2xl shadow-inner">
+                            🧊
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span id="team1-turn-badge" class="hidden bg-sky-600 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider">YOUR TURN</span>
+                            </div>
+                            <h2 id="display-team1-name" class="font-display font-bold text-lg md:text-xl text-slate-900 leading-tight">Frost Giants</h2>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[11px] font-bold uppercase text-slate-400 block">Points</span>
+                        <span id="display-team1-score" class="font-display font-bold text-3xl md:text-4xl text-sky-600">0</span>
+                    </div>
+                </div>
+
+                <!-- Center Turn Indicator & Tiles Remaining -->
+                <div class="frost-dark rounded-2xl p-3 text-center text-white flex flex-col items-center justify-center">
+                    <span class="text-xs uppercase tracking-widest text-sky-300 font-bold mb-0.5">Active Turn</span>
+                    <div id="active-turn-banner" class="font-display font-bold text-xl md:text-2xl text-amber-300 drop-shadow">
+                        🧊 Frost Giants' Pick!
+                    </div>
+                    <div class="mt-1 flex items-center gap-3 text-xs text-sky-100 font-semibold">
+                        <span><i class="fa-solid fa-snowflake text-sky-300 mr-1"></i>Tiles Left: <strong id="tiles-remaining">16</strong></span>
+                        <button onclick="manualSwitchTurn()" class="underline hover:text-amber-300 transition" title="Manually switch active team">Switch Turn</button>
+                    </div>
+                </div>
+
+                <!-- Team 2 Card -->
+                <div id="team2-card" class="frost-panel rounded-2xl p-3.5 md:p-4 flex items-center justify-between border-4 border-rose-300 transition-all duration-300">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-red-700 text-white flex items-center justify-center text-2xl shadow-inner">
+                            🔥
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span id="team2-turn-badge" class="hidden bg-rose-600 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider">YOUR TURN</span>
+                            </div>
+                            <h2 id="display-team2-name" class="font-display font-bold text-lg md:text-xl text-slate-900 leading-tight">Blizzard Ballers</h2>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[11px] font-bold uppercase text-slate-400 block">Points</span>
+                        <span id="display-team2-score" class="font-display font-bold text-3xl md:text-4xl text-rose-600">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Numbered Ice Tile Grid -->
+            <div id="tiles-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 md:gap-4 my-1">
+                <!-- Tiles dynamically injected via JS -->
+            </div>
+
+        </section>
+
+        <!-- =========================================================
+             SCREEN 3: VICTORY / END GAME PODIUM
+             ========================================================= -->
+        <section id="victory-screen" class="hidden w-full max-w-3xl frost-panel rounded-3xl p-6 md:p-10 text-center">
+            <div class="text-6xl md:text-7xl mb-3 animate-float">🏆</div>
+            <div class="inline-block bg-amber-100 border-2 border-amber-300 text-amber-800 font-extrabold text-xs uppercase tracking-widest px-4 py-1 rounded-full mb-2">
+                Final Buzzer • Game Over
+            </div>
+            <h1 id="winner-headline" class="font-display font-bold text-3xl md:text-5xl text-slate-900 mb-2">
+                Frost Giants Win!
+            </h1>
+            <p id="winner-subtext" class="text-slate-600 font-medium text-base md:text-lg mb-6">
+                Champions of the Winter Court!
+            </p>
+
+            <!-- Final Scores Comparison -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto mb-8">
+                <div id="final-card-1" class="bg-sky-50 border-4 border-sky-400 rounded-2xl p-5">
+                    <div class="text-3xl mb-1">🧊</div>
+                    <h3 id="final-name-1" class="font-display font-bold text-xl text-slate-800">Frost Giants</h3>
+                    <div id="final-score-1" class="font-display font-bold text-5xl text-sky-600 mt-1">0</div>
+                    <span class="text-xs font-bold uppercase text-slate-400">Points</span>
+                </div>
+
+                <div id="final-card-2" class="bg-rose-50 border-4 border-rose-400 rounded-2xl p-5">
+                    <div class="text-3xl mb-1">🔥</div>
+                    <h3 id="final-name-2" class="font-display font-bold text-xl text-slate-800">Blizzard Ballers</h3>
+                    <div id="final-score-2" class="font-display font-bold text-5xl text-rose-600 mt-1">0</div>
+                    <span class="text-xs font-bold uppercase text-slate-400">Points</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button onclick="rematchSameSettings()" class="btn-arcade w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-display font-bold text-xl rounded-2xl shadow-[0_5px_0_#1e3a8a] flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Play Again (Same Teams)
+                </button>
+                <button onclick="returnToSetup()" class="btn-arcade w-full sm:w-auto px-8 py-4 bg-slate-700 hover:bg-slate-800 text-white font-display font-bold text-xl rounded-2xl shadow-[0_5px_0_#0f172a] flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Change Setup
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- =========================================================
+         MODAL 1: MULTIPLE CHOICE QUESTION (MCQ)
+         ========================================================= -->
+    <div id="mcq-modal" class="hidden fixed inset-0 z-40 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="frost-panel w-full max-w-3xl rounded-3xl p-5 md:p-8 relative transform transition-all">
+            <!-- Top Badge Row -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <div class="flex items-center gap-2">
+                    <span id="modal-tile-badge" class="bg-sky-600 text-white font-display font-bold px-3.5 py-1 rounded-xl text-sm shadow">
+                        Tile #1
+                    </span>
+                    <span id="modal-bonus-badge" class="hidden bg-amber-400 text-amber-950 font-extrabold px-3 py-1 rounded-xl text-xs uppercase tracking-wider shadow animate-pulse">
+                        ⭐ Bonus Shot (+1 Pt)
+                    </span>
+                </div>
+                <div id="modal-team-indicator" class="font-display font-bold text-sm md:text-base px-3.5 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-300">
+                    🧊 Frost Giants Answering
+                </div>
+            </div>
+
+            <!-- Question Text -->
+            <div class="bg-white/95 border-2 border-sky-200 rounded-2xl p-5 md:p-6 mb-5 shadow-inner">
+                <h2 id="modal-question-text" class="font-display font-bold text-xl md:text-3xl text-slate-900 leading-snug text-center">
+                    Question goes here?
+                </h2>
+            </div>
+
+            <!-- 4 MCQ Option Buttons -->
+            <div id="modal-options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <!-- Injected by JS -->
+            </div>
+
+            <!-- Feedback Banner (Shown right after answering) -->
+            <div id="mcq-feedback-bar" class="hidden mt-5 p-4 rounded-2xl text-center border-2">
+                <p id="mcq-feedback-title" class="font-display font-bold text-xl md:text-2xl"></p>
+                <p id="mcq-feedback-sub" class="text-sm md:text-base font-semibold mt-0.5"></p>
+                <div class="mt-3">
+                    <button id="mcq-continue-btn" class="btn-arcade px-8 py-3 rounded-xl font-display font-bold text-lg text-white shadow-md">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL 2: INTERACTIVE WINTER BASKETBALL SHOT MINI-GAME
+         ========================================================= -->
+    <div id="bball-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 md:p-5">
+        <div class="frost-panel w-full max-w-4xl rounded-3xl p-4 md:p-6 flex flex-col gap-3">
+            <!-- Header Info -->
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-2xl md:text-3xl">🏀</span>
+                    <div>
+                        <h3 id="bball-shooter-title" class="font-display font-bold text-lg md:text-2xl text-slate-900 leading-none">
+                            Frost Giants' Shot!
+                        </h3>
+                        <p class="text-xs md:text-sm text-slate-600 font-semibold mt-0.5">
+                            Hit the <span class="text-emerald-600 font-extrabold">GREEN SWEET SPOT</span> for a 3-Pt Swish, or Yellow for 2 Pts!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 bg-slate-900 text-white px-4 py-1.5 rounded-2xl">
+                    <div class="text-center">
+                        <span class="text-[10px] uppercase text-sky-300 block font-bold" id="mini-t1-name">Team 1</span>
+                        <span class="font-display font-bold text-lg" id="mini-t1-score">0</span>
+                    </div>
+                    <span class="text-slate-500 font-bold">VS</span>
+                    <div class="text-center">
+                        <span class="text-[10px] uppercase text-rose-300 block font-bold" id="mini-t2-name">Team 2</span>
+                        <span class="font-display font-bold text-lg" id="mini-t2-score">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive 2D Basketball Court Canvas -->
+            <div id="court-wrapper">
+                <canvas id="bball-canvas"></canvas>
+
+                <!-- Floating Shot Result Callout -->
+                <div id="shot-result-overlay" class="hidden pointer-events-none absolute inset-0 flex flex-col items-center justify-center z-20">
+                    <div id="shot-result-badge" class="px-8 py-4 rounded-3xl border-4 border-white shadow-2xl text-center transform scale-100 transition-transform">
+                        <div id="shot-result-emoji" class="text-5xl mb-1">🔥</div>
+                        <div id="shot-result-text" class="font-display font-bold text-3xl md:text-5xl text-white drop-shadow">SWISH! +3 PTS!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Big Action Shoot Button (Supports Click, Tap & Spacebar) -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+                <div class="text-xs md:text-sm font-bold text-slate-600 flex items-center gap-2">
+                    <span class="bg-slate-200 px-2.5 py-1 rounded-lg text-slate-800 border border-slate-300">SPACEBAR</span>
+                    <span>or tap the button / court to lock your shot!</span>
+                </div>
+
+                <button id="btn-shoot-action" onclick="handleShootInput()" class="btn-arcade w-full sm:w-auto px-10 py-3.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-display font-bold text-xl md:text-2xl rounded-2xl shadow-[0_5px_0_#7f1d1d] border-2 border-orange-200 flex items-center justify-center gap-2">
+                    <span>🏀 SHOOT BALL!</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL 3: HOW TO PLAY & CONFIRMATION DIALOG
+         ========================================================= -->
+    <div id="help-modal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="frost-panel w-full max-w-lg rounded-3xl p-6 md:p-7">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-display font-bold text-2xl text-slate-900">❄️ How to Play</h2>
+                <button onclick="toggleHelpModal(false)" class="w-9 h-9 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center font-bold text-slate-700">✕</button>
+            </div>
+            <ul class="space-y-3 text-slate-700 text-sm md:text-base font-medium mb-6">
+                <li class="flex items-start gap-3">
+                    <span class="w-7 h-7 rounded-full bg-sky-600 text-white font-bold flex-shrink-0 flex items-center justify-center text-sm">1</span>
+                    <span>Two teams take turns picking a numbered <strong>Frosted Ice Tile</strong> from the board.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="w-7 h-7 rounded-full bg-sky-600 text-white font-bold flex-shrink-0 flex items-center justify-center text-sm">2</span>
+                    <span>Answer the <strong>Multiple-Choice Question</strong> together as a team.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="w-7 h-7 rounded-full bg-orange-500 text-white font-bold flex-shrink-0 flex items-center justify-center text-sm">3</span>
+                    <span><strong>Correct Answer = Basketball Shot!</strong> Time the moving power meter to sink a <strong>2-Pointer</strong> or hit the green center zone for a <strong>3-Point Swish</strong>!</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="w-7 h-7 rounded-full bg-rose-500 text-white font-bold flex-shrink-0 flex items-center justify-center text-sm">4</span>
+                    <span>If the answer is wrong, no shot is awarded and the turn passes to the other team. Highest score when all tiles are cleared wins!</span>
+                </li>
+            </ul>
+            <button onclick="toggleHelpModal(false)" class="btn-arcade w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-display font-bold text-lg rounded-xl shadow-[0_4px_0_#0369a1]">
+                Got It! Let's Hoop! 🏀
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal (No window.confirm used!) -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="frost-panel w-full max-w-md rounded-3xl p-6 text-center">
+            <div class="text-4xl mb-2">⛄</div>
+            <h3 class="font-display font-bold text-2xl text-slate-900 mb-2">Return to Setup?</h3>
+            <p class="text-slate-600 font-medium text-sm mb-6">Current game progress and scores will be reset.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeConfirmModal()" class="px-6 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 font-bold text-slate-800">Cancel</button>
+                <button onclick="executeReturnSetup()" class="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 font-bold text-white shadow">Yes, Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* =====================================================================
+           1. SOUND EFFECTS ENGINE (Web Audio API - Zero External Audio Files)
+           ===================================================================== */
+        const SoundFX = {
+            ctx: null,
+            muted: false,
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            playTone(freq, type, duration, delay = 0, gainVal = 0.18) {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime + delay;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(gainVal, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + duration);
+            },
+
+            tileClick() {
+                this.playTone(680, 'sine', 0.12, 0, 0.15);
+                this.playTone(920, 'triangle', 0.14, 0.05, 0.12);
+            },
+
+            correctChime() {
+                // Winter sleigh-bell / crystal chime arpeggio
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                notes.forEach((n, i) => {
+                    this.playTone(n, 'sine', 0.35, i * 0.07, 0.16);
+                    this.playTone(n * 2, 'triangle', 0.2, i * 0.07, 0.06);
+                });
+            },
+
+            wrongBuzzer() {
+                this.playTone(190, 'sawtooth', 0.25, 0, 0.15);
+                this.playTone(145, 'sawtooth', 0.38, 0.14, 0.15);
+            },
+
+            shootRelease() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(520, now + 0.18);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            },
+
+            rimBounce() {
+                this.playTone(165, 'triangle', 0.14, 0, 0.25);
+                this.playTone(110, 'sine', 0.18, 0.02, 0.22);
+            },
+
+            swishNet() {
+                if (this.muted) return;
+                this.init();
+                // Filtered white noise burst for crisp net swish + celebratory chord
+                const bufferSize = this.ctx.sampleRate * 0.35;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.11));
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 2400;
+                filter.Q.value = 1.4;
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.34);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+
+                // Cheerful fanfare notes
+                this.playTone(587.33, 'triangle', 0.25, 0.08, 0.16);
+                this.playTone(880.00, 'triangle', 0.4, 0.18, 0.18);
+            },
+
+            victoryFanfare() {
+                const melody = [
+                    { f: 523.25, d: 0.15, t: 0 },
+                    { f: 659.25, d: 0.15, t: 0.15 },
+                    { f: 783.99, d: 0.15, t: 0.30 },
+                    { f: 1046.50, d: 0.45, t: 0.45 },
+                    { f: 783.99, d: 0.15, t: 0.92 },
+                    { f: 1046.50, d: 0.65, t: 1.10 }
+                ];
+                melody.forEach(m => this.playTone(m.f, 'triangle', m.d, m.t, 0.2));
+            }
+        };
+
+        function toggleSound() {
+            SoundFX.muted = !SoundFX.muted;
+            const icon = document.getElementById('mute-icon');
+            icon.className = SoundFX.muted
+                ? 'fa-solid fa-volume-xmark text-rose-500'
+                : 'fa-solid fa-volume-high text-sky-600';
+        }
+
+        /* =====================================================================
+           2. BUILT-IN TRIVIA QUESTION PACKS (20 MCQs per Pack)
+           ===================================================================== */
+        const TRIVIA_PACKS = {
+            winter_science: [
+                { q: "How many sides does a classic ice crystal snowflake have?", options: ["4 sides", "6 sides", "8 sides", "10 sides"], correct: 1 },
+                { q: "At what temperature does pure water freeze at sea level?", options: ["0°C (32°F)", "10°C (50°F)", "-10°C (14°F)", "100°C (212°F)"], correct: 0 },
+                { q: "Which animal's fur turns pure white in the winter to blend into the snow?", options: ["Grizzly Bear", "Arctic Fox", "Emperor Penguin", "Moose"], correct: 1 },
+                { q: "What is the name of the famous winter phenomenon of colorful lights in the polar sky?", options: ["Solar Eclipse", "Aurora Borealis", "Milky Way", "Meteor Shower"], correct: 1 },
+                { q: "What is a severe snowstorm with strong winds and low visibility called?", options: ["Monsoon", "Blizzard", "Cyclone", "Heatwave"], correct: 1 },
+                { q: "Why does salt get spread on icy winter roads?", options: ["It makes ice prettier", "It lowers water's freezing point", "It absorbs sunlight", "It makes tires softer"], correct: 1 },
+                { q: "Which continent holds about 90% of the world's ice?", options: ["North America", "Europe", "Antarctica", "Asia"], correct: 2 },
+                { q: "What do we call the deep winter sleep that bears and groundhogs enter?", options: ["Migration", "Hibernation", "Camouflage", "Evaporation"], correct: 1 },
+                { q: "Which planet has ice caps made of both water ice and frozen carbon dioxide (dry ice)?", options: ["Venus", "Mars", "Mercury", "Jupiter"], correct: 1 },
+                { q: "What percentage of fresh snow is actually trapped air?", options: ["About 10%", "About 30%", "About 50%", "Over 90%"], correct: 3 },
+                { q: "Which winter sport uses heavy polished granite stones slid across ice toward a target?", options: ["Luge", "Bobsled", "Curling", "Biathlon"], correct: 2 },
+                { q: "What is frozen rain that bounces when it hits the ground called?", options: ["Sleet", "Fog", "Dew", "Frost"], correct: 0 },
+                { q: "In the Northern Hemisphere, which month marks the Winter Solstice?", options: ["October", "November", "December", "February"], correct: 2 },
+                { q: "Which bird can swim underwater at 22 mph in icy Antarctic seas?", options: ["Snowy Owl", "Emperor Penguin", "Puffin", "Albatross"], correct: 1 },
+                { q: "What is a massive, slow-moving river of ice on land called?", options: ["Iceberg", "Glacier", "Avalanche", "Tundra"], correct: 1 },
+                { q: "How much of an iceberg is hidden beneath the ocean's surface?", options: ["About 10%", "About 50%", "About 90%", "100%"], correct: 2 },
+                { q: "Which gas makes up most of Earth's atmosphere even on freezing winter days?", options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Helium"], correct: 1 },
+                { q: "What happens to the volume of water when it freezes into ice?", options: ["It shrinks", "It expands", "It stays exact same", "It turns to gas"], correct: 1 },
+                { q: "Which evergreen trees keep their green needles all winter long?", options: ["Oak & Maple", "Pine & Spruce", "Birch & Willow", "Cherry & Apple"], correct: 1 },
+                { q: "What is the fastest recorded wind speed on Earth, measured on snowy Mount Washington?", options: ["105 mph", "165 mph", "231 mph", "310 mph"], correct: 2 }
+            ],
+            general_knowledge: [
+                { q: "Which ocean is the largest and deepest on Earth?", options: ["Atlantic Ocean", "Indian Ocean", "Pacific Ocean", "Arctic Ocean"], correct: 2 },
+                { q: "How many continents are there on Earth?", options: ["5", "6", "7", "8"], correct: 2 },
+                { q: "Which planet in our solar system is known as the 'Red Planet'?", options: ["Jupiter", "Mars", "Saturn", "Venus"], correct: 1 },
+                { q: "What is the hardest natural substance found on Earth?", options: ["Gold", "Iron", "Diamond", "Quartz"], correct: 2 },
+                { q: "Which organ in the human body pumps blood?", options: ["Lungs", "Brain", "Heart", "Liver"], correct: 2 },
+                { q: "How many sides does a hexagon have?", options: ["5", "6", "7", "8"], correct: 1 },
+                { q: "Which country is home to the kangaroo and koala?", options: ["New Zealand", "South Africa", "Australia", "Brazil"], correct: 2 },
+                { q: "What do bees collect from flowers to make honey?", options: ["Dew", "Nectar", "Sap", "Seeds"], correct: 1 },
+                { q: "Which famous scientist discovered gravity after seeing a falling apple?", options: ["Albert Einstein", "Isaac Newton", "Galileo", "Nikola Tesla"], correct: 1 },
+                { q: "What is the capital city of Japan?", options: ["Seoul", "Beijing", "Tokyo", "Bangkok"], correct: 2 },
+                { q: "How many colors are in a traditional rainbow?", options: ["5", "6", "7", "9"], correct: 2 },
+                { q: "Which animal is the tallest land mammal in the world?", options: ["African Elephant", "Giraffe", "Polar Bear", "Hippopotamus"], correct: 1 },
+                { q: "What gas do plants absorb from the air during photosynthesis?", options: ["Oxygen", "Carbon Dioxide", "Hydrogen", "Neon"], correct: 1 },
+                { q: "In which country are the Ancient Pyramids of Giza located?", options: ["Greece", "Mexico", "Egypt", "Peru"], correct: 2 },
+                { q: "How many minutes are there in 3 hours?", options: ["120 minutes", "150 minutes", "180 minutes", "210 minutes"], correct: 2 },
+                { q: "Which musical instrument has 88 black and white keys?", options: ["Guitar", "Violin", "Piano", "Flute"], correct: 2 },
+                { q: "What is the largest mammal in the entire world?", options: ["Blue Whale", "Great White Shark", "Elephant", "Orca"], correct: 0 },
+                { q: "Which direction does the Sun rise from?", options: ["North", "South", "East", "West"], correct: 2 },
+                { q: "What is H2O more commonly known as?", options: ["Salt", "Water", "Sugar", "Oxygen"], correct: 1 },
+                { q: "How many degrees are in a right angle?", options: ["45°", "90°", "180°", "360°"], correct: 1 }
+            ],
+            fun_riddles: [
+                { q: "What has hands and a face, but cannot clap or smile?", options: ["A snowman", "A clock", "A statue", "A mirror"], correct: 1 },
+                { q: "The more you take away from me, the bigger I get. What am I?", options: ["A snowball", "A hole", "A cloud", "A balloon"], correct: 1 },
+                { q: "What gets wetter the more it dries?", options: ["An icicle", "A sponge", "A towel", "Rain"], correct: 2 },
+                { q: "What has keys that open no locks, space but no room, and you can enter but not go outside?", options: ["A piano", "A keyboard", "A map", "A treasure chest"], correct: 1 },
+                { q: "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?", options: ["A dream", "A globe / map", "A painting", "A desert"], correct: 1 },
+                { q: "What can travel all around the world while staying in a corner?", options: ["A postage stamp", "A compass", "A spider", "An airplane"], correct: 0 },
+                { q: "What has to be broken before you can use it?", options: ["A glowstick", "An egg", "A piggy bank", "A coconut"], correct: 1 },
+                { q: "I'm tall when I'm young, and I'm short when I'm old. What am I?", options: ["A pine tree", "A candle", "A mountain", "A shadow"], correct: 1 },
+                { q: "What belongs to you, but your friends use it way more than you do?", options: ["Your pencil", "Your name", "Your phone", "Your eraser"], correct: 1 },
+                { q: "What has many teeth, but cannot bite?", options: ["A shark", "A zipper", "A comb", "A saw"], correct: 2 },
+                { q: "What goes up and down, but never moves?", options: ["An elevator", "Stairs", "A thermometer", "A yo-yo"], correct: 1 },
+                { q: "What can you catch, but never throw?", options: ["A basketball", "A cold", "A boomerang", "A frisbee"], correct: 1 },
+                { q: "What has one eye, but cannot see?", options: ["A cyclops", "A needle", "A potato", "A camera"], correct: 1 },
+                { q: "If you drop me, I'm sure to crack, but give me a smile and I'll always smile back!", options: ["An ice cube", "A mirror", "A phone screen", "Glass"], correct: 1 },
+                { q: "What has four legs in the morning, two in the afternoon, and three in the evening?", options: ["A dog", "A human", "A chair", "A spider"], correct: 1 },
+                { q: "What is full of holes, yet still holds water?", options: ["A bucket", "A sponge", "A fishing net", "Swiss cheese"], correct: 1 },
+                { q: "What word is spelled incorrectly in every single dictionary?", options: ["Mississippi", "Incorrectly", "Dictionary", "Rhythm"], correct: 1 },
+                { q: "What goes up when the rain comes down?", options: ["A rainbow", "An umbrella", "A puddle", "A cloud"], correct: 1 },
+                { q: "What has a neck, but no head?", options: ["A guitar", "A bottle", "A shirt", "All of these!"], correct: 3 },
+                { q: "Before Mount Everest was discovered, what was the highest mountain in the world?", options: ["K2", "Mount Kilimanjaro", "Still Mount Everest!", "Mount Fuji"], correct: 2 }
+            ],
+            sports_hoops: [
+                { q: "How many players from one team are allowed on the basketball court at the same time?", options: ["4 players", "5 players", "6 players", "7 players"], correct: 1 },
+                { q: "How many points is a shot made from beyond the arc worth in standard basketball?", options: ["1 point", "2 points", "3 points", "4 points"], correct: 2 },
+                { q: "Who invented the game of basketball in 1891 using peach baskets?", options: ["James Naismith", "Michael Jordan", "Larry Bird", "Babe Ruth"], correct: 0 },
+                { q: "How high is a regulation basketball hoop rim from the floor?", options: ["8 feet", "9 feet", "10 feet", "12 feet"], correct: 2 },
+                { q: "How many points is a single free throw worth?", options: ["1 point", "2 points", "3 points", "5 points"], correct: 0 },
+                { q: "What violation occurs when a player takes too many steps without dribbling the ball?", options: ["Offside", "Traveling", "Goaltending", "Double Dribble"], correct: 1 },
+                { q: "Which NBA legend is famous for wearing jersey #23 for the Chicago Bulls?", options: ["Kobe Bryant", "Michael Jordan", "Stephen Curry", "Shaquille O'Neal"], correct: 1 },
+                { q: "How many quarters are played in a standard NBA basketball game?", options: ["2 halves", "3 periods", "4 quarters", "5 innings"], correct: 2 },
+                { q: "What is it called when a player scores double digits in three statistical categories in one game?", options: ["Hat Trick", "Triple-Double", "Grand Slam", "Alley-Oop"], correct: 1 },
+                { q: "Which shot happens when one player throws the ball near the rim and a teammate catches and dunks it in mid-air?", options: ["Hook Shot", "Fadeaway", "Alley-Oop", "Layup"], correct: 2 },
+                { q: "In soccer (football), how many players are on the field per team?", options: ["9", "10", "11", "12"], correct: 2 },
+                { q: "Which sport uses terms like 'Love', 'Deuce', and 'Ace'?", options: ["Badminton", "Tennis", "Golf", "Volleyball"], correct: 1 },
+                { q: "How often are the Winter Olympic Games held?", options: ["Every 2 years", "Every 4 years", "Every 5 years", "Every year"], correct: 1 },
+                { q: "In ice hockey, what is the flat rubber disk players hit into the net called?", options: ["A puck", "A shuttlecock", "A biscuit", "A stone"], correct: 0 },
+                { q: "What is the maximum number of clubs a golfer can carry in their bag during a tournament?", options: ["10", "12", "14", "18"], correct: 2 },
+                { q: "Which country won the very first FIFA World Cup in 1930?", options: ["Brazil", "Uruguay", "Argentina", "Italy"], correct: 1 },
+                { q: "In baseball, how many strikes equal an out?", options: ["2 strikes", "3 strikes", "4 strikes", "5 strikes"], correct: 1 },
+                { q: "Which NBA player holds the all-time career scoring record?", options: ["Kareem Abdul-Jabbar", "LeBron James", "Karl Malone", "Kevin Durant"], correct: 1 },
+                { q: "What color are the five interlocking Olympic rings?", options: ["Blue, Yellow, Black, Green, Red", "Red, White, Blue, Gold, Silver", "Blue, Orange, Purple, Green, Red", "Black, White, Gold, Blue, Green"], correct: 0 },
+                { q: "How long is a standard NBA shot clock?", options: ["14 seconds", "24 seconds", "30 seconds", "35 seconds"], correct: 1 }
+            ]
+        };
+
+        /* =====================================================================
+           3. GLOBAL GAME STATE
+           ===================================================================== */
+        const gameState = {
+            team1: { name: "Frost Giants", score: 0 },
+            team2: { name: "Blizzard Ballers", score: 0 },
+            activeTeam: 1, // 1 or 2
+            tileCount: 16,
+            selectedPack: 'winter_science',
+            questionBank: [], // Editable copy of current pack
+            boardTiles: [],   // Array of { index, question, cleared, isBonus }
+            currentTileIndex: null,
+            isAnswering: false
+        };
+
+        // Initialize questionBank with default pack
+        gameState.questionBank = JSON.parse(JSON.stringify(TRIVIA_PACKS.winter_science));
+
+        /* =====================================================================
+           4. SETUP & CUSTOM QUESTION BUILDER LOGIC
+           ===================================================================== */
+        function selectTileCount(count) {
+            gameState.tileCount = count;
+            document.querySelectorAll('.tile-count-btn').forEach(btn => {
+                const c = parseInt(btn.dataset.count, 10);
+                if (c === count) {
+                    btn.className = "tile-count-btn py-2.5 rounded-xl font-display font-bold text-base border-2 border-sky-600 bg-sky-600 text-white shadow-md transition";
+                } else {
+                    btn.className = "tile-count-btn py-2.5 rounded-xl font-display font-bold text-base border-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-sky-50 transition";
+                }
+            });
+        }
+
+        function handlePackChange() {
+            const packKey = document.getElementById('select-pack').value;
+            gameState.selectedPack = packKey;
+            if (packKey === 'custom') {
+                if (gameState.questionBank.length === 0) {
+                    gameState.questionBank = [
+                        { q: "Sample Custom Question: What is 7 × 8?", options: ["54", "56", "64", "48"], correct: 1 }
+                    ];
+                }
+                // Automatically open editor when user picks Custom
+                document.getElementById('custom-editor-panel').classList.remove('hidden');
+                document.getElementById('editor-chevron').classList.add('rotate-180');
+            } else {
+                gameState.questionBank = JSON.parse(JSON.stringify(TRIVIA_PACKS[packKey]));
+            }
+            renderQuestionEditorList();
+        }
+
+        function toggleCustomEditor() {
+            const panel = document.getElementById('custom-editor-panel');
+            const chev = document.getElementById('editor-chevron');
+            panel.classList.toggle('hidden');
+            chev.classList.toggle('rotate-180');
+            renderQuestionEditorList();
+        }
+
+        function renderQuestionEditorList() {
+            const container = document.getElementById('question-list-container');
+            document.getElementById('active-q-count').textContent = gameState.questionBank.length;
+
+            if (gameState.questionBank.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 text-sm py-4">No questions yet! Add some using the form above.</p>`;
+                return;
+            }
+
+            const letters = ['A', 'B', 'C', 'D'];
+            container.innerHTML = gameState.questionBank.map((item, idx) => `
+                <div class="bg-sky-50/80 border border-sky-200 rounded-xl p-2.5 flex items-start justify-between gap-2 text-xs">
+                    <div>
+                        <p class="font-bold text-slate-800">${idx + 1}. ${escapeHTML(item.q)}</p>
+                        <p class="text-slate-600 mt-0.5">
+                            ${item.options.map((opt, oIdx) => `
+                                <span class="${oIdx === item.correct ? 'text-emerald-700 font-extrabold underline' : ''}">
+                                    ${letters[oIdx]}: ${escapeHTML(opt)}
+                                </span>
+                            `).join(' • ')}
+                        </p>
+                    </div>
+                    <button type="button" onclick="deleteCustomQuestion(${idx})" class="text-rose-500 hover:text-rose-700 px-2 py-1 font-bold" title="Delete question">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addCustomQuestion() {
+            const qText = document.getElementById('new-q-text').value.trim();
+            const opts = [
+                document.getElementById('new-opt-0').value.trim(),
+                document.getElementById('new-opt-1').value.trim(),
+                document.getElementById('new-opt-2').value.trim(),
+                document.getElementById('new-opt-3').value.trim()
+            ];
+            const correct = parseInt(document.getElementById('new-q-correct').value, 10);
+            const msgEl = document.getElementById('custom-form-msg');
+
+            if (!qText || opts.some(o => !o)) {
+                msgEl.textContent = "Please fill in the question and all 4 answer options.";
+                msgEl.className = "text-xs font-bold mt-1.5 text-rose-600 block";
+                return;
+            }
+
+            gameState.questionBank.unshift({ q: qText, options: opts, correct });
+            // Clear inputs
+            document.getElementById('new-q-text').value = '';
+            for (let i = 0; i < 4; i++) document.getElementById(`new-opt-${i}`).value = '';
+
+            msgEl.textContent = "✓ Question added to the top of the deck!";
+            msgEl.className = "text-xs font-bold mt-1.5 text-emerald-600 block";
+            setTimeout(() => msgEl.classList.add('hidden'), 2500);
+
+            renderQuestionEditorList();
+        }
+
+        function deleteCustomQuestion(idx) {
+            if (gameState.questionBank.length <= 1) {
+                const msgEl = document.getElementById('custom-form-msg');
+                msgEl.textContent = "At least 1 question is required to play!";
+                msgEl.className = "text-xs font-bold mt-1.5 text-rose-600 block";
+                return;
+            }
+            gameState.questionBank.splice(idx, 1);
+            renderQuestionEditorList();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        /* =====================================================================
+           5. START GAME & BOARD MANAGEMENT
+           ===================================================================== */
+        function startGame() {
+            SoundFX.init();
+            SoundFX.tileClick();
+
+            const t1Input = document.getElementById('input-team1').value.trim();
+            const t2Input = document.getElementById('input-team2').value.trim();
+
+            gameState.team1.name = t1Input || "Frost Giants";
+            gameState.team2.name = t2Input || "Blizzard Ballers";
+            gameState.team1.score = 0;
+            gameState.team2.score = 0;
+            gameState.activeTeam = 1;
+
+            buildBoardTiles();
+            updateScoreboardUI();
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('board-screen').classList.remove('hidden');
+            document.getElementById('btn-reset-top').classList.remove('hidden');
+        }
+
+        function buildBoardTiles() {
+            // Shuffle copy of question bank
+            const pool = [...gameState.questionBank];
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+
+            gameState.boardTiles = [];
+            for (let i = 0; i < gameState.tileCount; i++) {
+                // Repeat pool if user has fewer custom questions than tiles
+                const qObj = pool[i % pool.length];
+                // ~20% chance of a Golden Snowball Bonus Tile (+1 extra point on make!)
+                const isBonus = (i % 5 === 3);
+                gameState.boardTiles.push({
+                    number: i + 1,
+                    question: qObj,
+                    cleared: false,
+                    isBonus
+                });
+            }
+
+            renderTilesGrid();
+        }
+
+        function renderTilesGrid() {
+            const grid = document.getElementById('tiles-grid');
+            // Adjust columns nicely based on tile count
+            if (gameState.tileCount === 12) {
+                grid.className = "grid grid-cols-3 sm:grid-cols-4 gap-3 md:gap-4 my-1";
+            } else if (gameState.tileCount === 16) {
+                grid.className = "grid grid-cols-4 gap-3 md:gap-4 my-1";
+            } else {
+                grid.className = "grid grid-cols-4 sm:grid-cols-5 gap-2.5 md:gap-3.5 my-1";
+            }
+
+            grid.innerHTML = gameState.boardTiles.map((tile, idx) => {
+                if (tile.cleared) {
+                    return `
+                        <div class="ice-tile cleared rounded-2xl h-20 sm:h-24 md:h-28 flex flex-col items-center justify-center">
+                            <span class="text-sky-200/50 text-2xl">❄️</span>
+                        </div>
+                    `;
+                }
+                return `
+                    <button onclick="openTileQuestion(${idx})" class="ice-tile rounded-2xl h-20 sm:h-24 md:h-28 flex flex-col items-center justify-center group cursor-pointer">
+                        <span class="absolute top-2 right-2.5 text-sky-400/70 text-xs sm:text-sm">❄️</span>
+                        <span class="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-sky-900 group-hover:scale-110 transition-transform drop-shadow-sm">
+                            ${tile.number}
+                        </span>
+                    </button>
+                `;
+            }).join('');
+
+            const remaining = gameState.boardTiles.filter(t => !t.cleared).length;
+            document.getElementById('tiles-remaining').textContent = remaining;
+        }
+
+        function updateScoreboardUI() {
+            document.getElementById('display-team1-name').textContent = gameState.team1.name;
+            document.getElementById('display-team2-name').textContent = gameState.team2.name;
+            document.getElementById('display-team1-score').textContent = gameState.team1.score;
+            document.getElementById('display-team2-score').textContent = gameState.team2.score;
+
+            const t1Card = document.getElementById('team1-card');
+            const t2Card = document.getElementById('team2-card');
+            const t1Badge = document.getElementById('team1-turn-badge');
+            const t2Badge = document.getElementById('team2-turn-badge');
+            const banner = document.getElementById('active-turn-banner');
+
+            if (gameState.activeTeam === 1) {
+                t1Card.classList.add('active-team-1');
+                t2Card.classList.remove('active-team-2');
+                t1Badge.classList.remove('hidden');
+                t2Badge.classList.add('hidden');
+                banner.innerHTML = `🧊 ${escapeHTML(gameState.team1.name)}'s Pick!`;
+                banner.className = "font-display font-bold text-xl md:text-2xl text-sky-300 drop-shadow";
+            } else {
+                t2Card.classList.add('active-team-2');
+                t1Card.classList.remove('active-team-1');
+                t2Badge.classList.remove('hidden');
+                t1Badge.classList.add('hidden');
+                banner.innerHTML = `🔥 ${escapeHTML(gameState.team2.name)}'s Pick!`;
+                banner.className = "font-display font-bold text-xl md:text-2xl text-rose-300 drop-shadow";
+            }
+        }
+
+        function manualSwitchTurn() {
+            SoundFX.tileClick();
+            gameState.activeTeam = gameState.activeTeam === 1 ? 2 : 1;
+            updateScoreboardUI();
+        }
+
+        /* =====================================================================
+           6. MULTIPLE-CHOICE QUESTION (MCQ) MODAL FLOW
+           ===================================================================== */
+        function openTileQuestion(tileIndex) {
+            const tile = gameState.boardTiles[tileIndex];
+            if (!tile || tile.cleared) return;
+
+            SoundFX.tileClick();
+            gameState.currentTileIndex = tileIndex;
+            gameState.isAnswering = true;
+
+            const activeTeamObj = gameState.activeTeam === 1 ? gameState.team1 : gameState.team2;
+            const teamEmoji = gameState.activeTeam === 1 ? '🧊' : '🔥';
+
+            document.getElementById('modal-tile-badge').textContent = `Tile #${tile.number}`;
+            const bonusBadge = document.getElementById('modal-bonus-badge');
+            if (tile.isBonus) {
+                bonusBadge.classList.remove('hidden');
+            } else {
+                bonusBadge.classList.add('hidden');
+            }
+
+            const teamInd = document.getElementById('modal-team-indicator');
+            teamInd.textContent = `${teamEmoji} ${activeTeamObj.name} Answering`;
+            teamInd.className = gameState.activeTeam === 1
+                ? "font-display font-bold text-sm md:text-base px-3.5 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-300"
+                : "font-display font-bold text-sm md:text-base px-3.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300";
+
+            document.getElementById('modal-question-text').textContent = tile.question.q;
+
+            // Render 4 MCQ Option Buttons
+            const letters = ['A', 'B', 'C', 'D'];
+            const optColors = [
+                'from-sky-500 to-blue-600 border-sky-300',
+                'from-indigo-500 to-purple-600 border-indigo-300',
+                'from-teal-500 to-emerald-600 border-teal-300',
+                'from-amber-500 to-orange-600 border-amber-300'
+            ];
+
+            const optGrid = document.getElementById('modal-options-grid');
+            optGrid.innerHTML = tile.question.options.map((opt, idx) => `
+                <button type="button" onclick="submitMCQAnswer(${idx})" id="mcq-opt-btn-${idx}"
+                    class="mcq-option w-full text-left p-3.5 md:p-4 rounded-2xl bg-white hover:bg-sky-50 border-3 border-slate-200 hover:border-sky-400 shadow-md flex items-center gap-3.5 cursor-pointer">
+                    <span class="w-10 h-10 rounded-xl bg-gradient-to-br ${optColors[idx]} text-white font-display font-bold text-lg flex-shrink-0 flex items-center justify-center shadow">
+                        ${letters[idx]}
+                    </span>
+                    <span class="font-bold text-slate-800 text-base md:text-lg leading-snug">
+                        ${escapeHTML(opt)}
+                    </span>
+                </button>
+            `).join('');
+
+            // Hide feedback bar initially
+            document.getElementById('mcq-feedback-bar').classList.add('hidden');
+            document.getElementById('mcq-modal').classList.remove('hidden');
+        }
+
+        function submitMCQAnswer(selectedIndex) {
+            if (!gameState.isAnswering) return;
+            gameState.isAnswering = false;
+
+            const tile = gameState.boardTiles[gameState.currentTileIndex];
+            const correctIndex = tile.question.correct;
+            const isCorrect = (selectedIndex === correctIndex);
+
+            // Disable all option buttons and highlight correct/wrong
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`mcq-opt-btn-${i}`);
+                btn.disabled = true;
+                if (i === correctIndex) {
+                    btn.className = "w-full text-left p-3.5 md:p-4 rounded-2xl bg-emerald-100 border-4 border-emerald-500 shadow-md flex items-center gap-3.5 scale-[1.02]";
+                } else if (i === selectedIndex && !isCorrect) {
+                    btn.className = "w-full text-left p-3.5 md:p-4 rounded-2xl bg-rose-100 border-4 border-rose-500 opacity-85 flex items-center gap-3.5";
+                } else {
+                    btn.className = "w-full text-left p-3.5 md:p-4 rounded-2xl bg-slate-100 border-2 border-slate-200 opacity-50 flex items-center gap-3.5";
+                }
+            }
+
+            // Mark tile cleared
+            tile.cleared = true;
+
+            const fbBar = document.getElementById('mcq-feedback-bar');
+            const fbTitle = document.getElementById('mcq-feedback-title');
+            const fbSub = document.getElementById('mcq-feedback-sub');
+            const contBtn = document.getElementById('mcq-continue-btn');
+
+            fbBar.classList.remove('hidden');
+
+            if (isCorrect) {
+                SoundFX.correctChime();
+                fbBar.className = "mt-5 p-4 rounded-2xl text-center border-2 bg-emerald-50 border-emerald-400";
+                fbTitle.textContent = "🎉 CORRECT! STEP UP TO THE FREE-THROW LINE!";
+                fbTitle.className = "font-display font-bold text-xl md:text-2xl text-emerald-700";
+                fbSub.textContent = tile.isBonus
+                    ? "⭐ Golden Snowball Tile active: +1 Bonus Point if you sink the basket!"
+                    : "Take your shot to score 2 or 3 points for your team!";
+                fbSub.className = "text-sm md:text-base font-semibold mt-0.5 text-emerald-800";
+
+                contBtn.textContent = "🏀 TAKE YOUR SHOT!";
+                contBtn.className = "btn-arcade px-8 py-3 rounded-xl font-display font-bold text-xl text-white bg-gradient-to-r from-orange-500 to-amber-500 shadow-[0_4px_0_#9a3412]";
+                contBtn.onclick = () => {
+                    document.getElementById('mcq-modal').classList.add('hidden');
+                    launchBasketballMiniGame(tile.isBonus);
+                };
+            } else {
+                SoundFX.wrongBuzzer();
+                const letters = ['A', 'B', 'C', 'D'];
+                fbBar.className = "mt-5 p-4 rounded-2xl text-center border-2 bg-rose-50 border-rose-300";
+                fbTitle.textContent = "❄️ OOPS! FROZEN OUT!";
+                fbTitle.className = "font-display font-bold text-xl md:text-2xl text-rose-700";
+                fbSub.textContent = `Correct Answer: ${letters[correctIndex]} — ${tile.question.options[correctIndex]}. No shot this turn!`;
+                fbSub.className = "text-sm md:text-base font-semibold mt-0.5 text-rose-800";
+
+                contBtn.textContent = "Next Team's Turn ➔";
+                contBtn.className = "btn-arcade px-8 py-3 rounded-xl font-display font-bold text-lg text-white bg-slate-700 shadow-[0_4px_0_#1e293b]";
+                contBtn.onclick = () => {
+                    document.getElementById('mcq-modal').classList.add('hidden');
+                    finishTurnAndAdvance();
+                };
+            }
+        }
+
+        function finishTurnAndAdvance() {
+            renderTilesGrid();
+            const remaining = gameState.boardTiles.filter(t => !t.cleared).length;
+
+            if (remaining === 0) {
+                showVictoryScreen();
+                return;
+            }
+
+            // Switch active team
+            gameState.activeTeam = gameState.activeTeam === 1 ? 2 : 1;
+            updateScoreboardUI();
+        }
+
+        /* =====================================================================
+           7. INTERACTIVE 2D WINTER BASKETBALL MINI-GAME (CANVAS + PHYSICS)
+           ===================================================================== */
+        const bballGame = {
+            canvas: null,
+            ctx: null,
+            animId: null,
+            phase: 'AIMING', // 'AIMING' | 'FLYING' | 'RESULT'
+            meterPos: 0.15,  // 0.0 to 1.0 oscillating timing bar
+            meterDir: 1,
+            meterSpeed: 0.015,
+            isBonusTile: false,
+            ball: {
+                x: 0, y: 0,
+                vx: 0, vy: 0,
+                radius: 22,
+                rotation: 0,
+                startX: 0, startY: 0
+            },
+            hoop: {
+                x: 0, y: 0,
+                rimRadius: 34,
+                netSway: 0
+            },
+            particles: [],
+            shotOutcome: null // 'SWISH' | 'SCORE' | 'MISS'
+        };
+
+        function launchBasketballMiniGame(isBonus) {
+            const modal = document.getElementById('bball-modal');
+            modal.classList.remove('hidden');
+
+            const activeTeamObj = gameState.activeTeam === 1 ? gameState.team1 : gameState.team2;
+            const teamEmoji = gameState.activeTeam === 1 ? '🧊' : '🔥';
+            document.getElementById('bball-shooter-title').textContent = `${teamEmoji} ${activeTeamObj.name}'s Shot!`;
+
+            document.getElementById('mini-t1-name').textContent = gameState.team1.name;
+            document.getElementById('mini-t1-score').textContent = gameState.team1.score;
+            document.getElementById('mini-t2-name').textContent = gameState.team2.name;
+            document.getElementById('mini-t2-score').textContent = gameState.team2.score;
+
+            document.getElementById('shot-result-overlay').classList.add('hidden');
+            const shootBtn = document.getElementById('btn-shoot-action');
+            shootBtn.disabled = false;
+            shootBtn.classList.remove('opacity-50');
+
+            bballGame.canvas = document.getElementById('bball-canvas');
+            bballGame.ctx = bballGame.canvas.getContext('2d');
+            bballGame.isBonusTile = isBonus;
+            bballGame.phase = 'AIMING';
+            bballGame.meterPos = Math.random() * 0.4;
+            bballGame.meterDir = 1;
+            // Slightly varied speed for fun classroom excitement
+            bballGame.meterSpeed = 0.014 + Math.random() * 0.005;
+            bballGame.particles = [];
+            bballGame.shotOutcome = null;
+
+            resizeBballCanvas();
+            resetBallPosition();
+
+            // Allow tapping directly on canvas to shoot
+            bballGame.canvas.onclick = () => handleShootInput();
+
+            if (bballGame.animId) cancelAnimationFrame(bballGame.animId);
+            bballLoop();
+        }
+
+        function resizeBballCanvas() {
+            if (!bballGame.canvas) return;
+            const rect = bballGame.canvas.parentElement.getBoundingClientRect();
+            bballGame.canvas.width = rect.width;
+            bballGame.canvas.height = rect.height;
+
+            const w = bballGame.canvas.width;
+            const h = bballGame.canvas.height;
+
+            bballGame.hoop.x = w * 0.80;
+            bballGame.hoop.y = h * 0.36;
+            bballGame.hoop.rimRadius = Math.max(26, Math.min(36, w * 0.042));
+
+            bballGame.ball.startX = w * 0.20;
+            bballGame.ball.startY = h * 0.72;
+            bballGame.ball.radius = Math.max(18, Math.min(24, w * 0.028));
+        }
+
+        function resetBallPosition() {
+            bballGame.ball.x = bballGame.ball.startX;
+            bballGame.ball.y = bballGame.ball.startY;
+            bballGame.ball.vx = 0;
+            bballGame.ball.vy = 0;
+            bballGame.ball.rotation = 0;
+        }
+
+        function handleShootInput() {
+            if (bballGame.phase !== 'AIMING') return;
+
+            bballGame.phase = 'FLYING';
+            SoundFX.shootRelease();
+
+            const shootBtn = document.getElementById('btn-shoot-action');
+            shootBtn.disabled = true;
+            shootBtn.classList.add('opacity-50');
+
+            // Evaluate timing bar (0.50 is dead-center perfection!)
+            const distFromCenter = Math.abs(bballGame.meterPos - 0.5);
+            const sx = bballGame.ball.startX;
+            const sy = bballGame.ball.startY;
+            const tx = bballGame.hoop.x;
+            const ty = bballGame.hoop.y;
+
+            const gravity = 0.48;
+            let flightFrames = 52;
+            let targetX = tx;
+            let targetY = ty;
+
+            if (distFromCenter <= 0.075) {
+                // GREEN CENTER ZONE -> Clean 3-Point Swish!
+                bballGame.shotOutcome = 'SWISH';
+                targetX = tx;
+                targetY = ty - 4;
+            } else if (distFromCenter <= 0.21) {
+                // YELLOW GOOD ZONE -> Rim-in 2-Pointer!
+                bballGame.shotOutcome = 'SCORE';
+                targetX = tx - 14; // Hits front rim and drops in
+                targetY = ty - 8;
+            } else {
+                // RED OUTER ZONE -> Miss (short or long based on meter side)
+                bballGame.shotOutcome = 'MISS';
+                if (bballGame.meterPos < 0.5) {
+                    // Underpowered (hits front rim / airball short)
+                    targetX = tx - bballGame.hoop.rimRadius - 24;
+                    targetY = ty + 10;
+                } else {
+                    // Overpowered (hits backboard and bounces out)
+                    targetX = tx + bballGame.hoop.rimRadius + 16;
+                    targetY = ty - 38;
+                }
+            }
+
+            // Exact projectile kinematics so the arc looks natural and accurate
+            bballGame.ball.vx = (targetX - sx) / flightFrames;
+            bballGame.ball.vy = (targetY - sy - 0.5 * gravity * flightFrames * flightFrames) / flightFrames;
+            bballGame.ball.gravity = gravity;
+            bballGame.ball.framesElapsed = 0;
+            bballGame.ball.targetFrames = flightFrames;
+            bballGame.ball.bounced = false;
+        }
+
+        function bballLoop() {
+            updateBballPhysics();
+            renderBballScene();
+            if (!document.getElementById('bball-modal').classList.contains('hidden')) {
+                bballGame.animId = requestAnimationFrame(bballLoop);
+            }
+        }
+
+        function updateBballPhysics() {
+            // 1. Oscillate Timing Meter
+            if (bballGame.phase === 'AIMING') {
+                bballGame.meterPos += bballGame.meterDir * bballGame.meterSpeed;
+                if (bballGame.meterPos >= 1) {
+                    bballGame.meterPos = 1;
+                    bballGame.meterDir = -1;
+                } else if (bballGame.meterPos <= 0) {
+                    bballGame.meterPos = 0;
+                    bballGame.meterDir = 1;
+                }
+            }
+
+            // 2. Ball Flight Physics
+            if (bballGame.phase === 'FLYING') {
+                const b = bballGame.ball;
+                b.x += b.vx;
+                b.y += b.vy;
+                b.vy += b.gravity;
+                b.rotation += 0.14;
+                b.framesElapsed++;
+
+                // Check arrival at hoop plane
+                if (!b.bounced && b.framesElapsed >= b.targetFrames) {
+                    b.bounced = true;
+                    if (bballGame.shotOutcome === 'SWISH') {
+                        SoundFX.swishNet();
+                        bballGame.hoop.netSway = 18;
+                        spawnSnowBurst(bballGame.hoop.x, bballGame.hoop.y + 15, '#34d399');
+                        b.vx *= 0.15;
+                        b.vy = 4.5;
+                        triggerShotResult(3);
+                    } else if (bballGame.shotOutcome === 'SCORE') {
+                        SoundFX.rimBounce();
+                        setTimeout(() => SoundFX.swishNet(), 160);
+                        bballGame.hoop.netSway = 12;
+                        spawnSnowBurst(bballGame.hoop.x, bballGame.hoop.y + 15, '#fbbf24');
+                        // Little rim hop then drop through net
+                        b.x = bballGame.hoop.x;
+                        b.vy = -3.2;
+                        b.vx = 0.4;
+                        triggerShotResult(2);
+                    } else {
+                        SoundFX.rimBounce();
+                        spawnSnowBurst(b.x, b.y, '#ffffff');
+                        // Bounce away off rim/backboard
+                        b.vx = (bballGame.meterPos < 0.5) ? -3.8 : -4.8;
+                        b.vy = -5.5;
+                        triggerShotResult(0);
+                    }
+                }
+            }
+
+            // 3. Dampen Net Sway
+            if (Math.abs(bballGame.hoop.netSway) > 0.1) {
+                bballGame.hoop.netSway *= -0.88;
+            } else {
+                bballGame.hoop.netSway = 0;
+            }
+
+            // 4. Update Snow Burst Particles
+            for (let i = bballGame.particles.length - 1; i >= 0; i--) {
+                const p = bballGame.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.15;
+                p.life -= 0.022;
+                if (p.life <= 0) bballGame.particles.splice(i, 1);
+            }
+        }
+
+        function spawnSnowBurst(x, y, accentColor) {
+            for (let i = 0; i < 36; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 6;
+                bballGame.particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2,
+                    size: 4 + Math.random() * 5,
+                    color: i % 2 === 0 ? '#ffffff' : accentColor,
+                    life: 1.0
+                });
+            }
+        }
+
+        function triggerShotResult(basePoints) {
+            bballGame.phase = 'RESULT';
+
+            const overlay = document.getElementById('shot-result-overlay');
+            const badge = document.getElementById('shot-result-badge');
+            const emoji = document.getElementById('shot-result-emoji');
+            const text = document.getElementById('shot-result-text');
+
+            let totalAwarded = basePoints;
+            if (basePoints > 0 && bballGame.isBonusTile) {
+                totalAwarded += 1;
+            }
+
+            if (basePoints === 3) {
+                badge.className = "px-8 py-4 rounded-3xl border-4 border-white shadow-2xl text-center bg-gradient-to-r from-emerald-500 to-teal-600";
+                emoji.textContent = "🔥❄️🔥";
+                text.textContent = `SWISH! +${totalAwarded} PTS!`;
+            } else if (basePoints === 2) {
+                badge.className = "px-8 py-4 rounded-3xl border-4 border-white shadow-2xl text-center bg-gradient-to-r from-amber-500 to-orange-600";
+                emoji.textContent = "🏀✨";
+                text.textContent = `BUCKET! +${totalAwarded} PTS!`;
+            } else {
+                badge.className = "px-8 py-4 rounded-3xl border-4 border-white shadow-2xl text-center bg-gradient-to-r from-slate-600 to-slate-800";
+                emoji.textContent = "⛄💨";
+                text.textContent = "RIMMED OUT! 0 PTS";
+            }
+
+            // Award points to active team
+            if (totalAwarded > 0) {
+                if (gameState.activeTeam === 1) {
+                    gameState.team1.score += totalAwarded;
+                    document.getElementById('mini-t1-score').textContent = gameState.team1.score;
+                } else {
+                    gameState.team2.score += totalAwarded;
+                    document.getElementById('mini-t2-score').textContent = gameState.team2.score;
+                }
+            }
+
+            setTimeout(() => {
+                overlay.classList.remove('hidden');
+            }, 220);
+
+            // Close mini-game after celebration and advance board turn
+            setTimeout(() => {
+                cancelAnimationFrame(bballGame.animId);
+                document.getElementById('bball-modal').classList.add('hidden');
+                finishTurnAndAdvance();
+            }, 2100);
+        }
+
+        function renderBballScene() {
+            const ctx = bballGame.ctx;
+            const w = bballGame.canvas.width;
+            const h = bballGame.canvas.height;
+
+            // 1. Winter Sky Gradient
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.78);
+            skyGrad.addColorStop(0, '#0f172a');
+            skyGrad.addColorStop(0.55, '#1d4ed8');
+            skyGrad.addColorStop(1, '#7dd3fc');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Distant Snowy Mountains
+            ctx.fillStyle = 'rgba(224, 242, 254, 0.35)';
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.78);
+            ctx.lineTo(w * 0.18, h * 0.45);
+            ctx.lineTo(w * 0.38, h * 0.78);
+            ctx.lineTo(w * 0.58, h * 0.40);
+            ctx.lineTo(w * 0.82, h * 0.78);
+            ctx.fill();
+
+            // Pine Trees Silhouettes
+            drawPineTree(ctx, w * 0.08, h * 0.78, 55);
+            drawPineTree(ctx, w * 0.48, h * 0.78, 45);
+            drawPineTree(ctx, w * 0.92, h * 0.78, 60);
+
+            // 2. Snowy Outdoor Hardwood/Ice Court Floor
+            const courtY = h * 0.78;
+            const courtGrad = ctx.createLinearGradient(0, courtY, 0, h);
+            courtGrad.addColorStop(0, '#e0f2fe');
+            courtGrad.addColorStop(0.25, '#bae6fd');
+            courtGrad.addColorStop(1, '#38bdf8');
+            ctx.fillStyle = courtGrad;
+            ctx.fillRect(0, courtY, w, h - courtY);
+
+            // Court Free-Throw Line & Arc
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, courtY + 4);
+            ctx.lineTo(w, courtY + 4);
+            ctx.stroke();
+
+            // 3. Hoop Pole, Snow-Capped Backboard & Net
+            const hx = bballGame.hoop.x;
+            const hy = bballGame.hoop.y;
+            const rimR = bballGame.hoop.rimRadius;
+
+            // Pole
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(hx + rimR + 14, hy - 55, 14, courtY - (hy - 55) + 10);
+
+            // Backboard
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.roundRect(hx + rimR + 4, hy - 78, 14, 96, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            // Fluffy Snow Cap on Top of Backboard
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(hx + rimR + 11, hy - 78, 14, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Back Rim
+            ctx.strokeStyle = '#c2410c';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(hx - rimR, hy);
+            ctx.lineTo(hx + rimR, hy);
+            ctx.stroke();
+
+            // Basketball Net (with dynamic sway)
+            const sway = bballGame.hoop.netSway;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 2.5;
+            const netDepth = 42;
+            const netBottomW = rimR * 0.62;
+            for (let i = -3; i <= 3; i++) {
+                const topX = hx + (i / 3) * (rimR - 4);
+                const botX = hx + (i / 3) * netBottomW + sway;
+                ctx.beginPath();
+                ctx.moveTo(topX, hy + 2);
+                ctx.lineTo(botX, hy + netDepth);
+                ctx.stroke();
+            }
+            // Cross-hatches on net
+            ctx.beginPath();
+            ctx.moveTo(hx - rimR + 6, hy + 15);
+            ctx.lineTo(hx + rimR - 6 + sway * 0.4, hy + 15);
+            ctx.moveTo(hx - rimR + 11, hy + 29);
+            ctx.lineTo(hx + rimR - 11 + sway * 0.7, hy + 29);
+            ctx.stroke();
+
+            // 4. Dotted Aiming Trajectory Preview (while AIMING)
+            if (bballGame.phase === 'AIMING') {
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+                for (let t = 4; t <= 28; t += 4) {
+                    const px = bballGame.ball.startX + ((hx - bballGame.ball.startX) / 52) * t;
+                    const vy0 = (hy - bballGame.ball.startY - 0.5 * 0.48 * 52 * 52) / 52;
+                    const py = bballGame.ball.startY + vy0 * t + 0.5 * 0.48 * t * t;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // 5. Draw Basketball
+            drawBasketball(ctx, bballGame.ball.x, bballGame.ball.y, bballGame.ball.radius, bballGame.ball.rotation);
+
+            // Front Rim Overlap (so ball looks like it goes INSIDE the hoop!)
+            ctx.strokeStyle = '#ea580c';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(hx - rimR, hy);
+            ctx.lineTo(hx + rimR + 4, hy);
+            ctx.stroke();
+
+            // 6. Draw Celebratory Snow Burst Particles
+            bballGame.particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 7. Draw Precision Power/Aim Timing Meter (Bottom Center of Canvas)
+            drawShotTimingMeter(ctx, w, h);
+        }
+
+        function drawPineTree(ctx, x, baseY, height) {
+            ctx.fillStyle = '#0f766e';
+            for (let tier = 0; tier < 3; tier++) {
+                const tierY = baseY - tier * (height * 0.28);
+                const tierW = (3 - tier) * (height * 0.24);
+                ctx.beginPath();
+                ctx.moveTo(x, tierY - height * 0.42);
+                ctx.lineTo(x - tierW, tierY);
+                ctx.lineTo(x + tierW, tierY);
+                ctx.closePath();
+                ctx.fill();
+
+                // Snow cap on tree tier
+                ctx.fillStyle = '#f0f9ff';
+                ctx.beginPath();
+                ctx.moveTo(x, tierY - height * 0.42);
+                ctx.lineTo(x - tierW * 0.45, tierY - height * 0.22);
+                ctx.lineTo(x + tierW * 0.45, tierY - height * 0.22);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#0f766e';
+            }
+        }
+
+        function drawBasketball(ctx, x, y, r, rot) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rot);
+
+            // Orange ball gradient
+            const grad = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r);
+            grad.addColorStop(0, '#fb923c');
+            grad.addColorStop(0.7, '#ea580c');
+            grad.addColorStop(1, '#9a3412');
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#431407';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Seams
+            ctx.beginPath();
+            ctx.moveTo(-r, 0);
+            ctx.lineTo(r, 0);
+            ctx.moveTo(0, -r);
+            ctx.lineTo(0, r);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(-r * 0.65, 0, r * 0.55, -Math.PI * 0.42, Math.PI * 0.42);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(r * 0.65, 0, r * 0.55, Math.PI * 0.58, Math.PI * 1.42);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawShotTimingMeter(ctx, w, h) {
+            const barW = Math.min(440, w * 0.78);
+            const barH = 26;
+            const barX = (w - barW) / 2;
+            const barY = h - 46;
+
+            ctx.save();
+            // Outer Frosted Frame
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.roundRect(barX - 6, barY - 6, barW + 12, barH + 12, 16);
+            ctx.fill();
+
+            // Red Base (Miss Zone)
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW, barH, 11);
+            ctx.fill();
+
+            // Yellow Good Zone (2 Points: 0.29 to 0.71)
+            const yellowW = barW * 0.42;
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(barX + (barW - yellowW) / 2, barY, yellowW, barH);
+
+            // Green Swish Sweet Spot (3 Points: 0.425 to 0.575)
+            const greenW = barW * 0.15;
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(barX + (barW - greenW) / 2, barY, greenW, barH);
+
+            // Zone Labels
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('3PT', barX + barW / 2, barY + 17);
+            ctx.fillText('2PT', barX + barW * 0.36, barY + 17);
+            ctx.fillText('2PT', barX + barW * 0.64, barY + 17);
+
+            // Moving Cursor Needle
+            const needleX = barX + bballGame.meterPos * barW;
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(needleX - 6, barY - 8, 12, barH + 16, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        /* =====================================================================
+           8. VICTORY SCREEN, MODALS & KEYBOARD SHORTCUTS
+           ===================================================================== */
+        function showVictoryScreen() {
+            SoundFX.victoryFanfare();
+
+            document.getElementById('board-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+
+            const s1 = gameState.team1.score;
+            const s2 = gameState.team2.score;
+
+            document.getElementById('final-name-1').textContent = gameState.team1.name;
+            document.getElementById('final-score-1').textContent = s1;
+            document.getElementById('final-name-2').textContent = gameState.team2.name;
+            document.getElementById('final-score-2').textContent = s2;
+
+            const headline = document.getElementById('winner-headline');
+            const subtext = document.getElementById('winner-subtext');
+
+            if (s1 > s2) {
+                headline.textContent = `🧊 ${gameState.team1.name} Win!`;
+                subtext.textContent = `Victory by ${s1 - s2} point${s1 - s2 === 1 ? '' : 's'} on the Winter Court!`;
+            } else if (s2 > s1) {
+                headline.textContent = `🔥 ${gameState.team2.name} Win!`;
+                subtext.textContent = `Victory by ${s2 - s1} point${s2 - s1 === 1 ? '' : 's'} on the Winter Court!`;
+            } else {
+                headline.textContent = "🤝 It's an Overtime Tie!";
+                subtext.textContent = "Both teams tied with identical championship scores!";
+            }
+        }
+
+        function rematchSameSettings() {
+            startGame();
+        }
+
+        function returnToSetup() {
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('board-screen').classList.add('hidden');
+            document.getElementById('btn-reset-top').classList.add('hidden');
+            document.getElementById('setup-screen').classList.remove('hidden');
+        }
+
+        function confirmReturnSetup() {
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        function executeReturnSetup() {
+            closeConfirmModal();
+            if (bballGame.animId) cancelAnimationFrame(bballGame.animId);
+            document.getElementById('mcq-modal').classList.add('hidden');
+            document.getElementById('bball-modal').classList.add('hidden');
+            returnToSetup();
+        }
+
+        function toggleHelpModal(show) {
+            const modal = document.getElementById('help-modal');
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        // Keyboard Spacebar shortcut for taking the basketball shot
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !document.getElementById('bball-modal').classList.contains('hidden')) {
+                e.preventDefault();
+                handleShootInput();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            resizeSnowCanvas();
+            if (!document.getElementById('bball-modal').classList.contains('hidden')) {
+                resizeBballCanvas();
+                if (bballGame.phase === 'AIMING') resetBallPosition();
+            }
+        });
+
+        /* =====================================================================
+           9. BACKGROUND FALLING SNOW PARTICLE ANIMATION
+           ===================================================================== */
+        const snowCanvas = document.getElementById('snow-canvas');
+        const snowCtx = snowCanvas.getContext('2d');
+        let snowflakes = [];
+
+        function resizeSnowCanvas() {
+            snowCanvas.width = window.innerWidth;
+            snowCanvas.height = window.innerHeight;
+        }
+
+        function initSnowflakes() {
+            resizeSnowCanvas();
+            snowflakes = [];
+            const count = Math.min(95, Math.floor(window.innerWidth / 14));
+            for (let i = 0; i < count; i++) {
+                snowflakes.push({
+                    x: Math.random() * snowCanvas.width,
+                    y: Math.random() * snowCanvas.height,
+                    r: 1.5 + Math.random() * 3.8,
+                    vy: 0.6 + Math.random() * 1.4,
+                    vx: -0.4 + Math.random() * 0.8,
+                    alpha: 0.4 + Math.random() * 0.6
+                });
+            }
+        }
+
+        function animateSnow() {
+            snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+            snowflakes.forEach(f => {
+                f.y += f.vy;
+                f.x += f.vx + Math.sin(f.y * 0.015) * 0.3;
+
+                if (f.y > snowCanvas.height) {
+                    f.y = -5;
+                    f.x = Math.random() * snowCanvas.width;
+                }
+                if (f.x > snowCanvas.width) f.x = 0;
+                if (f.x < 0) f.x = snowCanvas.width;
+
+                snowCtx.fillStyle = `rgba(255, 255, 255, ${f.alpha})`;
+                snowCtx.beginPath();
+                snowCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                snowCtx.fill();
+            });
+            requestAnimationFrame(animateSnow);
+        }
+
+        // Start ambient snow and populate initial question count on load
+        window.onload = function () {
+            initSnowflakes();
+            animateSnow();
+            renderQuestionEditorList();
+        };
+    </script>
+</body>
+</html>
